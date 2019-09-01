@@ -44,16 +44,14 @@ export default class App extends React.Component {
       count: 1500,
       break: false,
       textDisplay: "Press play to start",
-      running: false,
+      paused: true,
       seconds: "00",
       minutes: "25",
     }
   }
   
   componentDidMount = () => {
-    this.setState({
-      count: this.state.sessionLength * 60,
-    })
+
   }
 
   componentWillUnmount = () => {
@@ -61,48 +59,81 @@ export default class App extends React.Component {
   }
 
   sessionIncrement = () => {
-    clearInterval(this.interval);
+    // No sessions longer than 60 minutes
     if(this.state.sessionLength < 60){
+      // Check if session is active
+      if(!this.state.break){
+        clearInterval(this.interval);
+        this.setState({
+          seconds: "00",
+          paused: true,
+          textDisplay: "Press play to start",
+        });
+      }
+      // Check if paused
+      if(this.state.paused){
+        this.setState(prevState => ({
+          minutes: String(prevState.sessionLength + 5),
+        }));
+      }
+      // Increment
       this.setState( (prevState) => ({
-        sessionLength: prevState.sessionLength + 1,
-        minutes: String(prevState.sessionLength + 1),
-        seonds: "00",
-        count: (prevState.sessionLength*60) + 60,
-        running: false,
-        textDisplay: "Press play to start"
+        sessionLength: prevState.sessionLength + 5,
       }));
     }
   }
   sessionDecrement = ()=> {
-    clearInterval(this.interval);
     if(this.state.sessionLength > 1){
+      // Check if session is acive
+      if(!this.state.break){
+        clearInterval(this.interval);
+        this.setState({
+          seconds: "00",
+          paused: true,
+          textDisplay: "Press play to start",
+        });
+      }
+      // Check if paused
+      if(this.state.paused){
+        this.setState( prevState => ({
+          minutes: String(prevState.sessionLength - 5),
+        }));
+      }
+      // Decrement
       this.setState( (prevState)=> ({
-        sessionLength: prevState.sessionLength - 1,
-        minutes: String(prevState.sessionLength - 1),
-        seconds: "00",
-        count: (prevState.sessionLength*60) - 60,
-        running: false,
-        textDisplay: "Press play to start"
+        sessionLength: prevState.sessionLength - 5,
       }));
     }
   }
   breakIncrement = () => {
-    clearInterval(this.interval);
     if(this.state.breakLength < 60){
+      // Check if breaktime is active
+      if(this.state.break){
+        clearInterval(this.interval);
+        this.setState({
+          seconds: "00",
+          paused: true,
+          textDisplay: "Press play to start",
+        });
+      }
       this.setState( (prevState) => ({
         breakLength: prevState.breakLength + 1,
-        running: false,
-        textDisplay: "Press play to start"
       }));
     }
   }
   breakDecrement = () => {
-    clearInterval(this.interval);
     if(this.state.breakLength > 1){
+      // Check if breaktime is active
+      if(this.state.break){
+        clearInterval(this.interval);
+        this.setState({
+          seconds: "00",
+          paused: true,
+          textDisplay: "Press play to start",
+        });
+      }
       this.setState( (prevState)=> ({
         breakLength: prevState.breakLength - 1,
-        running: false,
-        textDisplay: "Press play to start"
       }));
     }
   }
@@ -110,13 +141,13 @@ export default class App extends React.Component {
   pause() {
     clearInterval(this.interval);
     this.setState({
-      running: false,
+      paused: true,
       textDisplay: "Paused"
     });
   }
 
   togglePlayPause = () => {
-    if(this.state.running){
+    if(!this.state.paused){
       this.pause();
     } else {
       this.run();
@@ -128,7 +159,7 @@ export default class App extends React.Component {
     clearInterval(this.interval);
     // Run Every Second
     this.interval = setInterval( ()=> {
-      // Conver seconds format to Seconds:Minutes
+      // Convert seconds format to Seconds:Minutes
       let seconds = Math.floor(this.state.count % 60);
       let minutes = Math.floor(this.state.count / 60);
       let secondsString = String(seconds).padStart(2,0);
@@ -137,7 +168,7 @@ export default class App extends React.Component {
       this.setState({
         minutes: minutesString,
         seconds: secondsString,
-        running: true,
+        paused: false,
       });
       // Check that timer hasn't run down
       if(this.state.count >= 1){
@@ -161,14 +192,12 @@ export default class App extends React.Component {
     if(this.state.break){
       this.setState({
         textDisplay: "Break",
-        break: true,
         count: this.state.breakLength * 60,
       });
       this.countDown();
     } else {
       this.setState({
         textDisplay: "Session",
-        break: false,
         count: this.state.sessionLength * 60,
       });
       this.countDown();
@@ -184,6 +213,7 @@ export default class App extends React.Component {
       seconds: "00",
       textDisplay: "Press play to start",
       break: false,
+      paused: true,
       count: this.state.sessionLength * 60,
     }));
   }
@@ -210,7 +240,6 @@ export default class App extends React.Component {
 
 const styles = StyleSheet.create({
   control: {
-    margin: 'auto',
     fontWeight: 'bold'
   },
   container: {
@@ -221,6 +250,7 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   rowContainer: {
+    justifyContent: 'space-between',
     flexDirection: 'row',
   },
   paragraph: {
